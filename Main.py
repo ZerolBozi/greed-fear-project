@@ -32,7 +32,7 @@ use_close_price = False
 update_done = {'news': '', 'stocks': ''} 
 
 """chatGPT API KEYS"""
-api_keys = ['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', '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', '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', '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', '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']
+api_keys = []
 
 async def update_news():
     first = True

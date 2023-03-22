@@ -29,14 +29,16 @@ n_day = 60
 start_date = ""
 end_data = ""
 use_close_price = False
-update_done = {'news': '', 'stocks': ''} 
+update_done = {'news': '', 'stocks': ''}
+
+# 更新週期
+update_time = 60 * 60 * 12
 
 """chatGPT API KEYS"""
 api_keys = []
 
-async def update_news():
+async def update_news(update_time:float=86400):
     first = True
-    update_time = 60 * 60 * 12 # 12小時
     proxy = Proxy(proxy_count=5, use_timeout=False)
 
     keywords = [
@@ -83,10 +85,10 @@ async def update_news():
         first = False
         # 當計算完成時，使用asyncio.create_task將貪婪恐懼指數更新的任務放入事件循環中
         asyncio.create_task(update_greed_fear_index(0,news_score=news_score))
-        update_done['news'] = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+        update_done['news'] = (datetime.now() + timedelta(seconds=update_time)).strftime("%Y-%m-%d %H:%M:%S")
         await asyncio.sleep(update_time)
 
-async def update_stocks(stock_ids:list, n_day:int, start_date:str, end_data:str, use_close_price:bool):
+async def update_stocks(stock_ids:list, n_day:int, start_date:str, end_data:str, use_close_price:bool, update_time:float=86400):
     while True:
         sd = StockData(stock_ids, n_day=n_day, start_date=start_date, end_date=end_data, candle_by=use_close_price)
         stock_price_normalized, stock_volume_normalized, exchange_rate_normalized = None, None, None
@@ -103,8 +105,8 @@ async def update_stocks(stock_ids:list, n_day:int, start_date:str, end_data:str,
 
         # 當計算完成時，使用asyncio.create_task將貪婪恐懼指數更新的任務放入事件循環中
         asyncio.create_task(update_greed_fear_index(1, stock_price=stock_price_normalized, stock_volume=stock_volume_normalized, exchange=exchange_rate_normalized))
-        update_done['stocks'] = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-        await asyncio.sleep(60 * 60 * 12)  # 等待12小時
+        update_done['stocks'] = (datetime.now() + timedelta(seconds=update_time)).strftime("%Y-%m-%d %H:%M:%S")
+        await asyncio.sleep(update_time)  # 等待12小時
 
 async def update_greed_fear_index(update_type:int, **kwargs):
     # 由於這個函數會被多個任務共用，所以在更新共變數時需要使用鎖來保護資源
@@ -209,8 +211,8 @@ def start_thread_loop(loop):
 
 async def main():
     # 創建新聞更新任務和股票更新任務
-    update_news_task = asyncio.create_task(update_news())
-    update_stocks_task = asyncio.create_task(update_stocks(stocks, n_day, start_date, end_data, use_close_price))
+    update_news_task = asyncio.create_task(update_news(update_time=update_time))
+    update_stocks_task = asyncio.create_task(update_stocks(stocks, n_day, start_date, end_data, use_close_price, update_time=update_time))
 
     # 等待所有任務完成
     await asyncio.gather(update_news_task, update_stocks_task)
@@ -225,4 +227,4 @@ if __name__ == "__main__":
 
     # 在主線程中啟動 FastAPI
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host='0.0.0.0', port=8000) 

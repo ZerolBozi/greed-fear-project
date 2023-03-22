@@ -38,7 +38,6 @@ async def update_news():
     first = True
     update_time = 60 * 60 * 12 # 12小時
     proxy = Proxy(proxy_count=5, use_timeout=False)
-    proxy.get_proxy()
 
     keywords = [
         "半導體", "電子", "積體電路", "晶圓", "晶片", "晶片組","微控制器", "微處理器", "IC", "ASIC", "FPGA", "DRAM", "SRAM", 
@@ -51,12 +50,11 @@ async def update_news():
 
     # trash website==
     # lbt = LibertyTimes(delay=1.5, proxy_valid_ips=proxy.get_valid_ips(),keywords=keywords)
-    mbn = MegaBankNews(delay=1, proxy_valid_ips=proxy.get_valid_ips(),keywords=keywords)
-    yft = YahooFinance_TW(delay=0.5, proxy_valid_ips=proxy.get_valid_ips(),keywords=keywords)
+    mbn = MegaBankNews(delay=1, keywords=keywords)
+    yft = YahooFinance_TW(delay=0.5, keywords=keywords)
 
     while True:
-        if not first:
-            mbn.update_proxy(proxy.update_proxy(5))
+        mbn.update_proxy(proxy.update_proxy(5))
 
         all_news = []
         news, news_with_keyword = await mbn.get_news([2, 5],date=mbn.get_today_date())
@@ -97,6 +95,7 @@ async def update_stocks(stock_ids:list, n_day:int, start_date:str, end_data:str,
             if sd.done:
                 stock_price_normalized, stock_volume_normalized, exchange_rate_normalized = sd.get_normalized_data()
                 break
+            asyncio.sleep(0.5)
 
         print('stock_price_normalized:', stock_price_normalized)
         print('stock_volume_normalized:', stock_volume_normalized)
@@ -105,7 +104,7 @@ async def update_stocks(stock_ids:list, n_day:int, start_date:str, end_data:str,
         # 當計算完成時，使用asyncio.create_task將貪婪恐懼指數更新的任務放入事件循環中
         asyncio.create_task(update_greed_fear_index(1, stock_price=stock_price_normalized, stock_volume=stock_volume_normalized, exchange=exchange_rate_normalized))
         update_done['stocks'] = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-        await asyncio.sleep(60 * 60 * 12)  # 等待11小時
+        await asyncio.sleep(60 * 60 * 12)  # 等待12小時
 
 async def update_greed_fear_index(update_type:int, **kwargs):
     # 由於這個函數會被多個任務共用，所以在更新共變數時需要使用鎖來保護資源
@@ -132,10 +131,8 @@ async def update_greed_fear_index(update_type:int, **kwargs):
     # stock update
     elif update_type == 1:
         for key, value in kwargs.items():
-            if len(scores['stocks']['stock_price']) > save_len_limit:
-                scores['stocks']['stock_price'].pop(0)
-                scores['stocks']['stock_volume'].pop(0)
-                scores['stocks']['exchange'].pop(0)
+            if len(scores['stocks'][key]) > save_len_limit:
+                scores['stocks'][key].pop(0)
             scores['stocks'][key].append(value)
         
     # 更新權重
@@ -228,4 +225,4 @@ if __name__ == "__main__":
 
     # 在主線程中啟動 FastAPI
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8000) 
+    uvicorn.run(app, host='0.0.0.0', port=8000)

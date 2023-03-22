@@ -72,6 +72,10 @@ class ChatBot:
             score, percentage = self.check_response_format(response['choices'][0]['message']['content'])
        
         except asyncio.TimeoutError:
+            print("asyncio timeout error")
+            score, percentage = 0, 0
+        except Exception as e:
+            print(e)
             score, percentage = 0, 0
 
         return score, percentage

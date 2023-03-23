@@ -173,7 +173,7 @@ async def get_greed_fear(greed_fear_type:str):
     tmp_greed_fear_his = []
 
     if len(greed_fear_index_copy) < 3:
-        tmp_greed_fear_his = [-1]* len(greed_fear_index_copy) + greed_fear_index_copy[-len(greed_fear_index_copy):]
+        tmp_greed_fear_his = [-1]* (3-len(greed_fear_index_copy)) + greed_fear_index_copy[-len(greed_fear_index_copy):]
 
     if not tmp_greed_fear_his:
         tmp_greed_fear_his = greed_fear_index_copy[-3:]
